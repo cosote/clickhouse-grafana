@@ -2,6 +2,56 @@
 System.register(['lodash', './sql_series', './sql_query', './response_parser', './adhoc', './scanner'], function(exports_1) {
     var lodash_1, sql_series_1, sql_query_1, response_parser_1, adhoc_1, scanner_1;
     var adhocFilterVariable, ClickHouseDatasource;
+	//https://github.com/DirtyHairy/async-mutex
+    var Mutex = /** @class */ (function () {
+        function Mutex() {
+            this._queue = [];
+            this._pending = false;
+        }
+        Mutex.prototype.isLocked = function () {
+            return this._pending;
+        };
+        Mutex.prototype.acquire = function () {
+            var _this = this;
+            var ticket = new Promise(function (resolve) { return _this._queue.push(resolve); });
+            if (!this._pending) {
+                this._dispatchNext();
+            }
+            return ticket;
+        };
+        Mutex.prototype.runExclusive = function (callback) {
+            return this
+                .acquire()
+                .then(function (release) {
+                var result;
+                try {
+                    result = callback();
+                }
+                catch (e) {
+                    release();
+                    throw (e);
+                }
+                return Promise
+                    .resolve(result)
+                    .then(function (x) { return (release(), x); }, function (e) {
+                    release();
+                    throw e;
+                });
+            });
+        };
+        Mutex.prototype._dispatchNext = function () {
+            if (this._queue.length > 0) {
+                this._pending = true;
+                this._queue.shift()(this._dispatchNext.bind(this));
+            }
+            else {
+                this._pending = false;
+            }
+        };
+        return Mutex;
+    }());
+    const mutex = new Mutex();
+
     return {
         setters:[
             function (lodash_1_1) {
@@ -44,6 +94,7 @@ System.register(['lodash', './sql_series', './sql_query', './response_parser', '
                     this.adhocCtrl = new adhoc_1.default(this);
                 }
                 ClickHouseDatasource.prototype._request = function (query) {
+                    var _this = this;
                     var options = {
                         url: this.url
                     };
@@ -70,9 +121,16 @@ System.register(['lodash', './sql_series', './sql_query', './response_parser', '
                             options.url += "&add_http_cors_header=1";
                         }
                     }
-                    return this.backendSrv.datasourceRequest(options).then(function (result) {
-                        return result.data;
-                    });
+					var lock = mutex.acquire();
+                    return lock.then(function (release) {
+						return _this.backendSrv.datasourceRequest(options)
+							.then(function (result) {
+								return result.data;
+							})
+							.finally(function () {
+								release();
+							});
+						});
                 };
                 ;
                 ClickHouseDatasource.prototype.query = function (options) {
