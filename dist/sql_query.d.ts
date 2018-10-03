@@ -6,6 +6,7 @@ export default class SqlQuery {
     /** @ngInject */
     constructor(target: any, templateSrv?: any, options?: any);
     replace(options: any, adhocFilters: any): any;
+    static render(html: any, options: any): any;
     static columns(query: string): string;
     static _columns(key: string, value: string, fromQuery: string): string;
     static rateColumns(query: string): string;
