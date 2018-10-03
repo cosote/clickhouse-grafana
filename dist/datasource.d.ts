@@ -1,5 +1,6 @@
 /// <reference path="../node_modules/grafana-sdk-mocks/app/headers/common.d.ts" />
 import AdhocCtrl from './adhoc';
+import Mutex from './Mutex';
 export declare class ClickHouseDatasource {
     private $q;
     private backendSrv;
@@ -16,14 +17,15 @@ export declare class ClickHouseDatasource {
     addCorsHeader: boolean;
     responseParser: any;
     adhocCtrl: AdhocCtrl;
+    mutex: Mutex;
     /** @ngInject */
     constructor(instanceSettings: any, $q: any, backendSrv: any, templateSrv: any);
-    _request(query: any): any;
+    _request(query: any): Promise<any>;
     query(options: any): any;
     annotationQuery(options: any): any;
     metricFindQuery(query: any, options?: any): any;
     testDatasource(): any;
-    _seriesQuery(query: any): any;
+    _seriesQuery(query: any): Promise<any>;
     targetContainsTemplate(target: any): any;
     getTagKeys(): any;
     getTagValues(options: any): Promise<any>;
