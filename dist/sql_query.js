@@ -124,7 +124,17 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './scanner'], fu
                         .replace(/\$interval/g, interval)
                         .replace(/\$adhoc/g, renderedAdHocCondition)
                         .replace(/(?:\r\n|\r|\n)/g, ' ');
-					var rawQuery = TemplateEngine(this.target.rawQuery, {options: options});
+					var rawQuery = TemplateEngine(this.target.rawQuery, {
+							templateSrv: self.templateSrv,
+							options: options, 
+							isAll: function(v){
+								var o = self.templateSrv.variables.find(
+									function(e){
+										return e.name == v;
+									}
+								);
+								return o && o.current.value == "$__all";
+							}});
 					if (rawQuery) this.target.rawQuery = rawQuery;
                     return this.target.rawQuery;
                 };
