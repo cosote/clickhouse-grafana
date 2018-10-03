@@ -7,6 +7,7 @@ import SqlQuery from './sql_query';
 import ResponseParser from './response_parser';
 import AdhocCtrl from './adhoc';
 import Scanner from './scanner';
+import Mutex from './Mutex';
 
 const adhocFilterVariable = 'adhoc_query_filter';
 
@@ -23,6 +24,7 @@ export class ClickHouseDatasource {
   addCorsHeader: boolean;
   responseParser: any;
   adhocCtrl: AdhocCtrl;
+  mutex: Mutex;
 
     /** @ngInject */
     constructor(instanceSettings,
@@ -41,6 +43,7 @@ export class ClickHouseDatasource {
       this.usePOST = instanceSettings.jsonData.usePOST;
       this.defaultDatabase = instanceSettings.jsonData.defaultDatabase || '';
       this.adhocCtrl = new AdhocCtrl(this);
+      this.mutex = new Mutex();
     }
 
     _request(query) {
@@ -73,8 +76,13 @@ export class ClickHouseDatasource {
           }
         }
 
-        return this.backendSrv.datasourceRequest(options).then(result => {
-            return result.data;
+        var lock = this.mutex.acquire();
+        return lock.then(release => {
+            return this.backendSrv.datasourceRequest(options).then(result => {
+                return result.data;
+            }).finally(()=>{
+                release();
+            });
         });
     };
 
