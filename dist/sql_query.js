@@ -88,7 +88,7 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './scanner'], fu
                     }
                     query = this.templateSrv.replace(query, options.scopedVars, SqlQuery.interpolateQueryExpr);
                     query = SqlQuery.unescape(query);
-                    this.target.rawQuery = query
+                    this.target.rawQuery = SqlQuery.render(query
                         .replace(/\$timeSeries/g, timeSeries)
                         .replace(/\$timeFilter/g, timeFilter)
                         .replace(/\$table/g, this.target.database + '.' + this.target.table)
@@ -98,19 +98,20 @@ System.register(['lodash', 'app/core/utils/datemath', 'moment', './scanner'], fu
                         .replace(/\$dateTimeCol/g, this.target.dateTimeColDataType)
                         .replace(/\$interval/g, interval)
                         .replace(/\$adhoc/g, renderedAdHocCondition)
-                        .replace(/(?:\r\n|\r|\n)/g, ' ');
-                    return SqlQuery.render(this.target.rawQuery, {
-                        templateSrv: self.templateSrv,
-                        options: options,
+                        .replace(/(?:\r\n|\r|\n)/g, ' '), self.templateSrv, options);
+                    return this.target.rawQuery;
+                };
+                SqlQuery.render = function (html, templateSrv, opts) {
+                    var options = {
+                        templateSrv: templateSrv,
+                        options: opts,
                         isAll: function (v) {
-                            var o = self.templateSrv.variables.find(function (e) {
+                            var o = templateSrv.variables.find(function (e) {
                                 return e.name == v;
                             });
                             return o && o.current.value == "$__all";
                         }
-                    });
-                };
-                SqlQuery.render = function (html, options) {
+                    };
                     var re = /<%(.+?)%>/g, reExp = /(^( )?(var|if|for|else|switch|case|break|{|}|;))(.*)?/g, code = 'with(obj) { var r=[];\n', cursor = 0, result, match;
                     var add = function (line, js) {
                         js ? (code += line.match(reExp) ? line + '\n' : 'r.push(' + line + ');\n') :

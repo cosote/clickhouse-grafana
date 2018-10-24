@@ -92,7 +92,7 @@ export default class SqlQuery {
 
         query = this.templateSrv.replace(query, options.scopedVars, SqlQuery.interpolateQueryExpr);
         query = SqlQuery.unescape(query);
-        this.target.rawQuery = query
+        this.target.rawQuery = SqlQuery.render(query
                     .replace(/\$timeSeries/g, timeSeries)
                     .replace(/\$timeFilter/g, timeFilter)
                     .replace(/\$table/g, this.target.database + '.' + this.target.table)
@@ -102,22 +102,24 @@ export default class SqlQuery {
                     .replace(/\$dateTimeCol/g, this.target.dateTimeColDataType)
                     .replace(/\$interval/g, interval)
                     .replace(/\$adhoc/g, renderedAdHocCondition)
-                    .replace(/(?:\r\n|\r|\n)/g, ' ');
-        return SqlQuery.render(this.target.rawQuery, {
-            templateSrv: self.templateSrv,
-            options: options, 
+                    .replace(/(?:\r\n|\r|\n)/g, ' ')
+                    , self.templateSrv, options);
+        return this.target.rawQuery;
+    }
+
+    static render(html, templateSrv, opts) {
+        var options = {
+            templateSrv: templateSrv,
+            options: opts, 
             isAll: function(v){
-                var o = self.templateSrv.variables.find(
+                var o = templateSrv.variables.find(
                     function(e){
                         return e.name == v;
                     }
                 );
                 return o && o.current.value == "$__all";
             }
-        });
-    }
-
-    static render(html, options) {
+        };
         var re = /<%(.+?)%>/g, 
             reExp = /(^( )?(var|if|for|else|switch|case|break|{|}|;))(.*)?/g, 
             code = 'with(obj) { var r=[];\n', 

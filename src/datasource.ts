@@ -189,7 +189,7 @@ export class ClickHouseDatasource {
                 query = query.replace(/\$to/g, to)
                     .replace(/\$from/g, from)
             }
-            interpolated = this.templateSrv.replace(query, {}, SqlQuery.interpolateQueryExpr);
+            interpolated = SqlQuery.render(this.templateSrv.replace(query, {}, SqlQuery.interpolateQueryExpr), this.templateSrv, options);
         } catch (err) {
             return this.$q.reject(err);
         }
