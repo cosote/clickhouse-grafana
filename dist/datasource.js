@@ -169,7 +169,7 @@ System.register(['lodash', './sql_series', './sql_query', './response_parser', '
                             query = query.replace(/\$to/g, to)
                                 .replace(/\$from/g, from);
                         }
-                        interpolated = this.templateSrv.replace(query, {}, sql_query_1.default.interpolateQueryExpr);
+                        interpolated = sql_query_1.default.render(this.templateSrv.replace(query, {}, sql_query_1.default.interpolateQueryExpr), this.templateSrv, options);
                     }
                     catch (err) {
                         return this.$q.reject(err);
